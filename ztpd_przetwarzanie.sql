@@ -76,3 +76,44 @@ where SDO_RELATE(GEOM,
 
 --3
 --A
+select CNTRY_NAME, 
+SDO_GEOM.SDO_LENGTH(SDO_GEOM.SDO_INTERSECTION(GEOM, (SELECT GEOM FROM COUNTRY_BOUNDARIES WHERE CNTRY_NAME='Poland'), 1), 1, 'unit=km')
+from COUNTRY_BOUNDARIES
+where SDO_RELATE(GEOM,
+(SELECT GEOM FROM COUNTRY_BOUNDARIES WHERE CNTRY_NAME='Poland'),
+'mask=TOUCH') = 'TRUE';
+
+--B
+select A.CNTRY_NAME, ROUND(SDO_GEOM.sdo_area(A.GEOM, 1, 'unit=SQ_KM')) POWIERZCHNIA
+from COUNTRY_BOUNDARIES A
+order by 2 desc
+fetch first 1 row only;
+
+--C
+select SDO_GEOM.sdo_area(SDO_GEOM.SDO_MBR(SDO_AGGR_UNION(MDSYS.SDOAGGRTYPE(GEOM,1))), 1, 'unit=SQ_KM') 
+from major_cities 
+where city_name in ('Warsaw', 'Lodz');
+
+--D
+select t.GEOM.GET_DIMS(), t.GEOM.GET_LRS_DIM(), t.GEOM.GET_GTYPE()
+from
+(select SDO_AGGR_UNION(MDSYS.SDOAGGRTYPE(g.GEOM,1)) GEOM
+from (select geom from country_boundaries where cntry_name='Poland'
+union all
+select geom from major_cities where city_name='Prague') g) t;
+
+--E
+select mc.city_name, cntry_name, SDO_GEOM.SDO_DISTANCE(mc.geom, SDO_GEOM.SDO_CENTROID(cb.GEOM,1), 1) distance
+from major_cities mc join country_boundaries cb using(cntry_name)
+order by distance
+fetch first 1 row only;
+
+--F
+select name, 
+sum(SDO_GEOM.SDO_LENGTH(SDO_GEOM.SDO_INTERSECTION(GEOM, (SELECT GEOM FROM COUNTRY_BOUNDARIES WHERE CNTRY_NAME='Poland'), 1), 1, 'unit=km'))
+dlugosc
+from rivers
+where SDO_RELATE(GEOM,
+(SELECT GEOM FROM COUNTRY_BOUNDARIES WHERE CNTRY_NAME='Poland'),
+'mask=ANYINTERACT') = 'TRUE'
+group by name;
