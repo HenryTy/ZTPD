@@ -1,0 +1,20 @@
+--1
+--A
+select lpad('-',2*(level-1),'|-') || t.owner||'.'||t.type_name||' (FINAL:'||t.final||', INSTANTIABLE:'||t.instantiable||', ATTRIBUTES:'||t.attributes||', METHODS:'||t.methods||')'
+from   all_types t
+start with t.type_name = 'ST_GEOMETRY'
+connect by prior t.type_name = t.supertype_name
+and prior t.owner = t.owner;
+
+--B
+select distinct m.method_name
+from all_type_methods m
+where m.type_name like 'ST_POLYGON'
+and m.owner = 'MDSYS'
+order by 1;
+
+--C
+CREATE TABLE MYST_MAJOR_CITIES(
+    FIPS_CNTRY VARCHAR2(2),
+    CITY_NAME VARCHAR2(40),
+    STGEOM ST_POINT);
